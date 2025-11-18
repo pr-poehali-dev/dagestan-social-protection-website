@@ -1,0 +1,37 @@
+{
+  "tests": [
+    {
+      "name": "Create appointment successfully",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "full_name": "Иванов Иван Иванович",
+        "phone": "+79123456789",
+        "email": "ivan@example.com",
+        "service_type": "Социальные выплаты",
+        "preferred_date": "2025-12-15",
+        "preferred_time": "10:00",
+        "additional_info": "Прошу подготовить документы"
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "success": true,
+        "message": "string"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Handle missing required fields",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "full_name": "Иванов Иван"
+      },
+      "expectedStatus": 400,
+      "expectedBody": {
+        "error": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

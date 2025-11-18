@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, FormEvent } from 'react';
+import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +10,10 @@ import { Badge } from '@/components/ui/badge';
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState('main');
+  const [isHighContrast, setIsHighContrast] = useState(false);
+  const [fontSize, setFontSize] = useState('normal');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   const services = [
     {
@@ -80,9 +85,127 @@ const Index = () => {
     }
   ];
 
+  const handleFeedbackSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      name: formData.get('name') as string,
+      email: formData.get('email') as string,
+      subject: formData.get('subject') as string,
+      message: formData.get('message') as string
+    };
+
+    try {
+      const response = await fetch('https://functions.poehali.dev/27c638fb-d062-4468-99d9-095085ddd0ed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast({ title: 'Успешно!', description: result.message });
+        e.currentTarget.reset();
+      } else {
+        toast({ title: 'Ошибка', description: result.error || 'Не удалось отправить обращение', variant: 'destructive' });
+      }
+    } catch (error) {
+      toast({ title: 'Ошибка', description: 'Не удалось отправить обращение', variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleAppointmentSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      full_name: formData.get('full_name') as string,
+      phone: formData.get('phone') as string,
+      email: formData.get('email') as string,
+      service_type: formData.get('service_type') as string,
+      preferred_date: formData.get('preferred_date') as string,
+      preferred_time: formData.get('preferred_time') as string,
+      additional_info: formData.get('additional_info') as string
+    };
+
+    try {
+      const response = await fetch('https://functions.poehali.dev/600741cb-3c36-4c6d-aa14-e49247432047', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast({ title: 'Успешно!', description: result.message });
+        e.currentTarget.reset();
+      } else {
+        toast({ title: 'Ошибка', description: result.error || 'Не удалось создать запись', variant: 'destructive' });
+      }
+    } catch (error) {
+      toast({ title: 'Ошибка', description: 'Не удалось создать запись', variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const getFontSizeClass = () => {
+    switch (fontSize) {
+      case 'large': return 'text-lg';
+      case 'xlarge': return 'text-xl';
+      default: return '';
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      <header className="bg-primary text-primary-foreground shadow-lg sticky top-0 z-50">
+    <div className={`min-h-screen ${isHighContrast ? 'bg-black text-yellow-300' : 'bg-gradient-to-b from-slate-50 to-white'} ${getFontSizeClass()}`}>
+      <div className="bg-yellow-50 border-b border-yellow-200 py-2">
+        <div className="container mx-auto px-4 flex items-center justify-between flex-wrap gap-2">
+          <span className="text-sm font-semibold">Версия для слабовидящих:</span>
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              size="sm"
+              variant={isHighContrast ? 'default' : 'outline'}
+              onClick={() => setIsHighContrast(!isHighContrast)}
+            >
+              <Icon name="Eye" size={16} className="mr-2" />
+              {isHighContrast ? 'Обычная версия' : 'Контрастная'}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setFontSize('normal')}
+              className={fontSize === 'normal' ? 'bg-primary text-white' : ''}
+            >
+              А
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setFontSize('large')}
+              className={fontSize === 'large' ? 'bg-primary text-white' : ''}
+            >
+              <span className="text-lg">А</span>
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setFontSize('xlarge')}
+              className={fontSize === 'xlarge' ? 'bg-primary text-white' : ''}
+            >
+              <span className="text-xl">А</span>
+            </Button>
+          </div>
+        </div>
+      </div>
+      <header className={`${isHighContrast ? 'bg-black border-b-4 border-yellow-300' : 'bg-primary'} text-primary-foreground shadow-lg sticky top-0 z-50`}>
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-4 mb-4">
             <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
@@ -107,6 +230,7 @@ const Index = () => {
               { id: 'documents', label: 'Документы', icon: 'FileText' },
               { id: 'structure', label: 'Структура', icon: 'Network' },
               { id: 'antiterror', label: 'Антитеррор', icon: 'Shield' },
+              { id: 'appointment', label: 'Запись на прием', icon: 'Calendar' },
               { id: 'contacts', label: 'Контакты', icon: 'Phone' }
             ].map(item => (
               <Button
@@ -114,7 +238,7 @@ const Index = () => {
                 variant={activeSection === item.id ? 'secondary' : 'ghost'}
                 size="sm"
                 onClick={() => setActiveSection(item.id)}
-                className="text-white hover:bg-secondary hover:text-white"
+                className={isHighContrast ? 'text-yellow-300 hover:bg-yellow-300 hover:text-black border border-yellow-300' : 'text-white hover:bg-secondary hover:text-white'}
               >
                 <Icon name={item.icon} size={16} className="mr-2" />
                 {item.label}
@@ -426,6 +550,93 @@ const Index = () => {
           </div>
         )}
 
+        {activeSection === 'appointment' && (
+          <div className="space-y-6 animate-fade-in">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-2xl flex items-center gap-2">
+                  <Icon name="Calendar" className="text-primary" />
+                  Онлайн-запись на прием
+                </CardTitle>
+                <CardDescription>
+                  Запишитесь на прием к специалисту в удобное время
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form className="space-y-4" onSubmit={handleAppointmentSubmit}>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">ФИО *</label>
+                      <Input name="full_name" placeholder="Иванов Иван Иванович" required />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Телефон *</label>
+                      <Input name="phone" type="tel" placeholder="+7 (___) ___-__-__" required />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Email</label>
+                    <Input name="email" type="email" placeholder="email@example.com" />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Вид услуги *</label>
+                    <select 
+                      name="service_type" 
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      required
+                    >
+                      <option value="">Выберите услугу</option>
+                      <option value="Социальные выплаты">Социальные выплаты</option>
+                      <option value="Социальное обслуживание">Социальное обслуживание</option>
+                      <option value="Льготы и субсидии">Льготы и субсидии</option>
+                      <option value="Реабилитация инвалидов">Реабилитация инвалидов</option>
+                      <option value="Поддержка семей">Поддержка семей</option>
+                      <option value="Ветеранам и труженикам">Ветеранам и труженикам</option>
+                    </select>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Желаемая дата *</label>
+                      <Input name="preferred_date" type="date" required />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">Желаемое время *</label>
+                      <select 
+                        name="preferred_time" 
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        required
+                      >
+                        <option value="">Выберите время</option>
+                        <option value="09:00">09:00</option>
+                        <option value="10:00">10:00</option>
+                        <option value="11:00">11:00</option>
+                        <option value="12:00">12:00</option>
+                        <option value="14:00">14:00</option>
+                        <option value="15:00">15:00</option>
+                        <option value="16:00">16:00</option>
+                        <option value="17:00">17:00</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Дополнительная информация</label>
+                    <Textarea name="additional_info" placeholder="Укажите дополнительные сведения, если необходимо" rows={3} />
+                  </div>
+
+                  <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+                    <Icon name="Calendar" className="mr-2" size={18} />
+                    {isSubmitting ? 'Отправка...' : 'Записаться на прием'}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {activeSection === 'contacts' && (
           <div className="space-y-6 animate-fade-in">
             <div className="grid md:grid-cols-2 gap-6">
@@ -490,22 +701,22 @@ const Index = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form className="space-y-4">
+                  <form className="space-y-4" onSubmit={handleFeedbackSubmit}>
                     <div>
-                      <Input placeholder="Ваше имя" />
+                      <Input name="name" placeholder="Ваше имя" required />
                     </div>
                     <div>
-                      <Input type="email" placeholder="Email" />
+                      <Input name="email" type="email" placeholder="Email" required />
                     </div>
                     <div>
-                      <Input placeholder="Тема обращения" />
+                      <Input name="subject" placeholder="Тема обращения" required />
                     </div>
                     <div>
-                      <Textarea placeholder="Текст обращения" rows={5} />
+                      <Textarea name="message" placeholder="Текст обращения" rows={5} required />
                     </div>
-                    <Button type="submit" className="w-full">
+                    <Button type="submit" className="w-full" disabled={isSubmitting}>
                       <Icon name="Send" className="mr-2" size={18} />
-                      Отправить обращение
+                      {isSubmitting ? 'Отправка...' : 'Отправить обращение'}
                     </Button>
                   </form>
                 </CardContent>
